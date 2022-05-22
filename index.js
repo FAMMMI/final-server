@@ -13,6 +13,20 @@ const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster
 
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
+function verifyJWT(req, res, next) {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+        return res.status(401).send({ message: 'UnAuthorized access' });
+    }
+    const token = authHeader.split(' ')[1];
+    jwt.verify(token, process.env.SECRET_ACCESS_TOKEN, function (err, decoded) {
+        if (err) {
+            return res.status(403).send({ message: 'Forbidden access' })
+        }
+        req.decoded = decoded;
+        next();
+    });
+}
 
 
 async function run() {
@@ -96,11 +110,85 @@ async function run() {
                     description: updatedProduct.description,
                     price: updatedProduct.price,
                     quantity: updatedProduct.quantity,
-                    productCode: updatedProduct.productCode,
+                    minimumQuantity: updatedProduct.minimumQuantity,
                     img: updatedProduct.img,
                 }
             };
             const result = await productsCollection.updateOne(filter, updateDoc, options);
+            res.send(result);
+        })
+
+        app.put('/orders', async (req, res) => {
+            const _id = req.query.id;
+            const updatedProduct = req.body;
+            const filter = { "_id": ObjectId(_id) };
+            const options = { upsert: true };
+            const updateDoc = {
+                $set: {
+                    userName: updatedProduct.userName,
+                    phone: updatedProduct.phone,
+                    address: updatedProduct.address,
+                    name: updatedProduct.name,
+                    email: updatedProduct.email,
+                    description: updatedProduct.description,
+                    price: updatedProduct.price,
+                    totalPrice: updatedProduct.totalPrice,
+                    quantity: updatedProduct.quantity,
+                    img: updatedProduct.img,
+                    status: updatedProduct.status
+                }
+            };
+            const result = await ordersCollection.updateOne(filter, updateDoc, options);
+            res.send(result);
+        })
+
+        app.post('/users', async (req, res) => {
+            const user = req.body;
+            const query = { name: user.name, email: user.email, address: user.address, phone: user.phone, password: user.password };
+            const exists = await usersCollection.findOne(query);
+            if (exists) {
+                return res.send({ success: false, user: exists })
+            }
+            const result = await usersCollection.insertOne(user);
+            res.send({ success: true, result });
+        })
+
+        app.post('/products', async (req, res) => {
+            const query = {}
+            const exists = await productsCollection.findOne(query);
+            if (exists) {
+                return res.send({ success: false, product: exists })
+            }
+            const product = req.body;
+            const result = await productsCollection.insertOne(product);
+            res.send({ success: true, result });
+        })
+        app.post('/orders', async (req, res) => {
+            const product = req.body;
+            const result = await ordersCollection.insertOne(product);
+            res.send(result);
+        })
+
+        app.post('/login', async (req, res) => {
+            const user = req.body;
+            const accessToken = jwt.sign(user, process.env.SECRET_ACCESS_TOKEN, {
+                expiresIn: '1d'
+            });
+            res.send({ accessToken });
+        })
+
+        app.delete('/products', async (req, res) => {
+            const _id = req.query.id;
+
+            // const query = {};
+            const result = await productsCollection.deleteOne({ "_id": ObjectId(_id) });
+            res.send(result);
+        })
+
+        app.delete('/orders', async (req, res) => {
+            const _id = req.query.id;
+            // console.log(id);
+            const result = await ordersCollection.deleteOne({ "_id": ObjectId(_id) });
             res.send(result);
         })
 
