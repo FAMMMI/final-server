@@ -77,6 +77,33 @@ async function run() {
             }
         })
 
+        app.get('/admin/:email', async (req, res) => {
+            const email = req.params.email;
+            const user = await usersCollection.findOne({ email: email });
+            const isAdmin = user.role === 'admin';
+            res.send({ admin: isAdmin })
+        })
+
+        app.put('/products/:id', async (req, res) => {
+            const _id = req.params.id;
+            const updatedProduct = req.body;
+            console.log(updatedProduct, _id);
+            const filter = { "_id": ObjectId(_id) };
+            const options = { upsert: true };
+            const updateDoc = {
+                $set: {
+                    name: updatedProduct.name,
+                    description: updatedProduct.description,
+                    price: updatedProduct.price,
+                    quantity: updatedProduct.quantity,
+                    productCode: updatedProduct.productCode,
+                    img: updatedProduct.img,
+                }
+            };
+            const result = await productsCollection.updateOne(filter, updateDoc, options);
+            res.send(result);
+        })
+
 
 
 
