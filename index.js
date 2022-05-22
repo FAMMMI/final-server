@@ -19,13 +19,67 @@ async function run() {
     try {
         await client.connect();
         const productCollection = client.db('assignment-12').collection('products');
+        const ordersCollection = client.db('assignment-12').collection('orders');
+        const usersCollection = client.db('assignment-12').collection('users');
+
+
+        app.get('/users', verifyJWT, async (req, res) => {
+            const email = req.query.email;
+            console.log(email);
+            if (email === undefined || email === '') {
+                const query = {};
+                const cursor = usersCollection.find(query);
+                const user = await cursor.toArray();
+                res.send(user);
+            }
+            else {
+                const query = { email: email };
+                const cursor = usersCollection.find(query);
+                const user = await cursor.toArray();
+                res.send(user);
+            }
+        })
 
         app.get('/product', async (req, res) => {
+            const id = req.query.id;
+
+            if (id !== undefined) {
+                const _id = req.query.id;
+                const cursor = productCollection.find({ "_id": ObjectId(_id) });
+                const products = await cursor.toArray();
+                res.send(products);
+            }
+            else {
+                const query = {};
+                const cursor = productCollection.find(query);
+                const products = await cursor.toArray();
+                res.send(products);
+            }
             const query = {};
             const cursor = productCollection.find(query);
             const products = await cursor.toArray();
             res.send(products);
         })
+
+        app.get('/orders', async (req, res) => {
+            const email = req.query.email;
+            if (email !== undefined) {
+                const query = { email: email };
+                const cursor = ordersCollection.find(query);
+                const products = await cursor.toArray();
+                res.send(products);
+            }
+            else {
+                const query = {};
+                const cursor = ordersCollection.find(query);
+                const products = await cursor.toArray();
+                res.send(products);
+            }
+        })
+
+
+
+
     }
     finally {
 
