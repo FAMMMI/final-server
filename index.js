@@ -96,16 +96,6 @@ async function run() {
             }
         })
 
-
-
-
-        app.get('/admin/:email', async (req, res) => {
-            const email = req.params.email;
-            const user = await usersCollection.findOne({ email: email });
-            const isAdmin = user.role === 'admin';
-            res.send({ admin: isAdmin })
-        })
-
         app.put('/users/admin/:email', async (req, res) => {
             const email = req.params.email;
             const filter = { email: email };
@@ -115,6 +105,16 @@ async function run() {
             const result = await usersCollection.updateOne(filter, updateDoc);
             res.send(result);
         })
+
+
+        app.get('/admin/:email', async (req, res) => {
+            const email = req.params.email;
+            const user = await usersCollection.findOne({ email: email });
+            const isAdmin = user.role === 'admin';
+            res.send({ admin: isAdmin })
+        })
+
+
 
         app.put('/user/:email', async (req, res) => {
             const email = req.params.email;
@@ -127,8 +127,8 @@ async function run() {
 
             };
             const result = await usersCollection.updateOne(filter, updateDoc, options);
-            // const token = jwt.sign({ email: email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' })
-            res.send({ result });
+            const token = jwt.sign({ email: email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' })
+            res.send({ result, token });
         })
 
         app.put('/products/:id', async (req, res) => {
@@ -174,6 +174,13 @@ async function run() {
             };
             const result = await ordersCollection.updateOne(filter, updateDoc, options);
             res.send(result);
+        })
+
+        app.get('/orders/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const booking = await ordersCollection.findOne(query);
+            res.send(booking);
         })
 
         app.post('/users', async (req, res) => {
