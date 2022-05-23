@@ -127,6 +127,7 @@ async function run() {
                     name: updatedProduct.name,
                     email: updatedProduct.email,
                     description: updatedProduct.description,
+                    minimumQuantity: updatedProduct.minimumQuantity,
                     price: updatedProduct.price,
                     totalPrice: updatedProduct.totalPrice,
                     quantity: updatedProduct.quantity,
@@ -172,7 +173,7 @@ async function run() {
             const _id = req.query.id;
 
             // const query = {};
-            const result = await productsCollection.deleteOne({ "_id": ObjectId(_id) });
+            const result = await productCollection.deleteOne({ "_id": ObjectId(_id) });
             res.send(result);
         })
 
