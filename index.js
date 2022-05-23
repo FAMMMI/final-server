@@ -1,7 +1,7 @@
 const express = require('express')
 const cors = require('cors');
 require('dotenv').config();
-const { MongoClient, ServerApiVersion, MongoRuntimeError } = require('mongodb');
+const { MongoClient, ServerApiVersion, MongoRuntimeError, ObjectId } = require('mongodb');
 const app = express();
 const port = process.env.PORT || 5000;
 
@@ -37,7 +37,7 @@ async function run() {
         const usersCollection = client.db('assignment-12').collection('users');
 
 
-        app.get('/users', verifyJWT, async (req, res) => {
+        app.get('/users', async (req, res) => {
             const email = req.query.email;
             console.log(email);
             if (email === undefined || email === '') {
@@ -54,7 +54,7 @@ async function run() {
             }
         })
 
-        app.get('/product', async (req, res) => {
+        app.get('/products', async (req, res) => {
             const id = req.query.id;
 
             if (id !== undefined) {
@@ -69,10 +69,6 @@ async function run() {
                 const products = await cursor.toArray();
                 res.send(products);
             }
-            const query = {};
-            const cursor = productCollection.find(query);
-            const products = await cursor.toArray();
-            res.send(products);
         })
 
         app.get('/orders', async (req, res) => {
@@ -91,12 +87,12 @@ async function run() {
             }
         })
 
-        app.get('/admin/:email', async (req, res) => {
-            const email = req.params.email;
-            const user = await usersCollection.findOne({ email: email });
-            const isAdmin = user.role === 'admin';
-            res.send({ admin: isAdmin })
-        })
+        // app.get('/admin/:email', async (req, res) => {
+        //     const email = req.params.email;
+        //     const user = await usersCollection.findOne({ email: email });
+        //     const isAdmin = user.role === 'admin';
+        //     res.send({ admin: isAdmin })
+        // })
 
         app.put('/products/:id', async (req, res) => {
             const _id = req.params.id;
@@ -114,7 +110,7 @@ async function run() {
                     img: updatedProduct.img,
                 }
             };
-            const result = await productsCollection.updateOne(filter, updateDoc, options);
+            const result = await productCollection.updateOne(filter, updateDoc, options);
             res.send(result);
         })
 
@@ -154,13 +150,8 @@ async function run() {
         })
 
         app.post('/products', async (req, res) => {
-            const query = {}
-            const exists = await productsCollection.findOne(query);
-            if (exists) {
-                return res.send({ success: false, product: exists })
-            }
-            const product = req.body;
-            const result = await productsCollection.insertOne(product);
+            const products = req.body;
+            const result = await productCollection.insertOne(products);
             res.send({ success: true, result });
         })
         app.post('/orders', async (req, res) => {
@@ -187,7 +178,6 @@ async function run() {
 
         app.delete('/orders', async (req, res) => {
             const _id = req.query.id;
-            // console.log(id);
             const result = await ordersCollection.deleteOne({ "_id": ObjectId(_id) });
             res.send(result);
         })
