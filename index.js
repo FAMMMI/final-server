@@ -1,5 +1,7 @@
 const express = require('express')
 const cors = require('cors');
+const jwt = require('jsonwebtoken');
+
 require('dotenv').config();
 const { MongoClient, ServerApiVersion, MongoRuntimeError, ObjectId } = require('mongodb');
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
@@ -74,7 +76,7 @@ async function run() {
 
         })
 
-        app.get('/users', async (req, res) => {
+        app.get('/users', verifyJWT, async (req, res) => {
             const email = req.query.email;
             console.log(email);
             if (email === undefined || email === '') {
@@ -91,6 +93,22 @@ async function run() {
             }
 
         })
+
+
+        app.get('/reviews', async (req, res) => {
+            const query = {};
+            const cursor = reviewsCollection.find(query);
+            const reviews = await cursor.toArray();
+            res.send(reviews)
+
+        })
+
+        app.post('/reviews', async (req, res) => {
+            const newReview = req.body;
+            const result = await reviewsCollection.insertOne(newReview);
+            res.send(result);
+        })
+
 
         app.get('/users', async (req, res) => {
             const users = await usersCollection.find().toArray();
