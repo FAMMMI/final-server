@@ -2,6 +2,8 @@ const express = require('express')
 const cors = require('cors');
 require('dotenv').config();
 const { MongoClient, ServerApiVersion, MongoRuntimeError, ObjectId } = require('mongodb');
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+
 const app = express();
 const port = process.env.PORT || 5000;
 
@@ -35,9 +37,42 @@ async function run() {
         const productCollection = client.db('assignment-12').collection('products');
         const ordersCollection = client.db('assignment-12').collection('orders');
         const usersCollection = client.db('assignment-12').collection('users');
+        const paymentsCollection = client.db('assignment-12').collection('payments');
         const reviewsCollection = client.db('assignment-12').collection('reviews');
 
 
+
+        app.post('/create-payment-intent', async (req, res) => {
+            const orders = req.body;
+            const price = orders.totalPrice;
+            const amount = price * 100;
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount: amount,
+                currency: "usd",
+                payment_method_types: ['card']
+            });
+            res.send({
+                clientSecret: paymentIntent.client_secret
+            })
+        })
+
+        app.patch('/orders/:id', async (req, res) => {
+            const _id = req.params.id;
+            const payment = req.body;
+            const filter = { _id: ObjectId(_id) };
+            const updatedDoc = {
+                $set: {
+                    paid: true,
+                    transactionId: payment.transactionId
+                }
+            }
+            const result = await paymentsCollection.insertOne(payment);
+            const updatedBooking = await ordersCollection.updateOne(filter, updatedDoc);
+
+            res.send(updatedDoc);
+
+
+        })
 
         app.get('/users', async (req, res) => {
             const email = req.query.email;
