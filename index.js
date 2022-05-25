@@ -168,20 +168,42 @@ async function run() {
         })
 
 
-
         app.put('/users/:email', async (req, res) => {
+            const _id = req.query.id;
             const email = req.params.email;
-            const user = req.body;
-            const filter = { email: email }
-            const options = { upsert: true };
-
-            const updateDoc = {
-                $set: user,
-
-            };
-            const result = await usersCollection.updateOne(filter, updateDoc, options);
-            const token = jwt.sign({ email: email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' })
-            res.send({ result, token });
+            console.log(_id, email);
+            if (_id !== undefined && email === undefined) {
+                const updatedUser = req.body;
+                console.log(_id, updatedUser);
+                const filter = { "_id": ObjectId(_id) };
+                const options = { upsert: true };
+                const updateDoc = {
+                    $set: {
+                        name: updatedUser.name,
+                        phone: updatedUser.phone,
+                        address: updatedUser.address,
+                        email: updatedUser.email,
+                        img: updatedUser.img,
+                        role: updatedUser.role
+                    }
+                };
+                const result = await usersCollection.updateOne(filter, updateDoc, options);
+                res.send(result);
+            }
+            else {
+                const filter = { email: email };
+                console.log(email);
+                const user = req.body;
+                const options = { upsert: true };
+                const updateDoc = { $set: user };
+                const result = await usersCollection.updateOne(filter, updateDoc, options);
+                const token = jwt.sign(
+                    { email: email },
+                    process.env.SECRET_ACCESS_TOKEN,
+                    { expiresIn: "24h" }
+                );
+                res.send({ result, token });
+            }
         })
 
         app.put('/products/:id', async (req, res) => {
@@ -236,6 +258,26 @@ async function run() {
             res.send(booking);
         })
 
+        app.put('/users', async (req, res) => {
+            const _id = req.query.id;
+            const updatedUser = req.body;
+            console.log(_id, updatedUser);
+            const filter = { "_id": ObjectId(_id) };
+            const options = { upsert: true };
+            const updateDoc = {
+                $set: {
+                    name: updatedUser.name,
+                    phone: updatedUser.phone,
+                    address: updatedUser.address,
+                    email: updatedUser.email,
+                    img: updatedUser.img
+
+                }
+            };
+            const result = await usersCollection.updateOne(filter, updateDoc, options);
+            res.send(result);
+        })
+
         app.post('/users', async (req, res) => {
             const user = req.body;
             const query = { name: user.name, email: user.email, address: user.address, phone: user.phone, password: user.password };
@@ -257,6 +299,21 @@ async function run() {
             const result = await ordersCollection.insertOne(product);
             res.send(result);
         })
+
+        // app.put("/user/:email", async (req, res) => {
+        //     const email = req.params.email;
+        //     const filter = { email: email };
+        //     const user = req.body;
+        //     const options = { upsert: true };
+        //     const updateDoc = { $set: user };
+        //     const result = await userCollection.updateOne(filter, updateDoc, options);
+        //     const token = jwt.sign(
+        //         { email: email },
+        //         process.env.ACCESS_TOKEN_SECRET,
+        //         { expiresIn: "24h" }
+        //     );
+        //     res.send({ result, token });
+        // });
 
         app.post('/login', async (req, res) => {
             const user = req.body;
