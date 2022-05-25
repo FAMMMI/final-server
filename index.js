@@ -169,7 +169,7 @@ async function run() {
 
 
 
-        app.put('/user/:email', async (req, res) => {
+        app.put('/users/:email', async (req, res) => {
             const email = req.params.email;
             const user = req.body;
             const filter = { email: email }
