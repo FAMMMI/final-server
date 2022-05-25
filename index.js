@@ -42,9 +42,19 @@ async function run() {
         const paymentsCollection = client.db('assignment-12').collection('payments');
         const reviewsCollection = client.db('assignment-12').collection('reviews');
 
+        const verifyAdmin = async (req, res, next) => {
+            const requester = req.decoded.email;
+            const requesterAccount = await usersCollection.findOne({ email: requester });
+            if (requesterAccount.role === 'admin') {
+                next();
+            }
+            else {
+                res.status(403).send({ message: 'forbidden' });
+            }
+        }
 
 
-        app.post('/create-payment-intent', async (req, res) => {
+        app.post('/create-payment-intent', verifyJWT, async (req, res) => {
             const orders = req.body;
             const price = orders.totalPrice;
             const amount = price * 100;
@@ -149,11 +159,21 @@ async function run() {
             }
         })
 
-        app.put('/users/admin/:email', async (req, res) => {
+        app.put('/users/admin/:email', verifyJWT, async (req, res) => {
             const email = req.params.email;
             const filter = { email: email };
             const updateDoc = {
                 $set: { role: 'admin' },
+            };
+            const result = await usersCollection.updateOne(filter, updateDoc);
+            res.send(result);
+        })
+
+        app.put('/user/removeAdmin/:email', verifyJWT, async (req, res) => {
+            const email = req.params.email;
+            const filter = { email: email };
+            const updateDoc = {
+                $set: { role: '' },
             };
             const result = await usersCollection.updateOne(filter, updateDoc);
             res.send(result);
